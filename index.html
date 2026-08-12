@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>GLP-1 Dosing Calculator — Gibson's Pharmacy</title>
+<title>GLP-1 Dosing Calculator — v2 Concept (Mockup)</title>
 <style>
   :root {
-    /* Gibson's Pharmacy & Compounding brand colors (from logo) */
     --brand-primary: #1e47a2;
     --brand-primary-dark: #163573;
     --brand-accent: #798f3c;
@@ -58,13 +57,10 @@
     flex: 1;
     height: 4px;
     border-radius: 2px;
-    background: #d8ded c;
     background: #dbe3e0;
   }
   .progress .dot.active { background: var(--brand-primary); }
-  .step {
-    display: none;
-  }
+  .step { display: none; }
   .step.visible { display: block; }
   .step-label {
     font-size: 0.82rem;
@@ -105,27 +101,27 @@
     color: var(--muted);
     margin-top: 2px;
   }
-  .confirm-card {
+  .custom-dose-box {
+    margin-top: 10px;
     background: var(--card-bg);
-    border: 2px solid #dbe3e0;
+    border: 2px dashed #c7cfd6;
     border-radius: var(--radius);
-    padding: 20px;
-    text-align: center;
+    padding: 14px;
   }
-  .confirm-card .expected-conc {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--brand-primary-dark);
-    margin: 6px 0 2px;
-  }
-  .confirm-card .expected-label {
+  .custom-dose-box.selected { border-color: var(--brand-primary); background: #eaf0fb; }
+  .custom-dose-box label {
+    display: block;
     font-size: 0.85rem;
+    font-weight: 600;
     color: var(--muted);
+    margin-bottom: 6px;
   }
-  .confirm-card p.instruction {
-    margin-top: 14px;
-    font-size: 0.9rem;
-    color: var(--muted);
+  .custom-dose-box input {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 10px 12px;
+    border: 2px solid #dbe3e0;
+    border-radius: 10px;
   }
   .btn-row {
     display: flex;
@@ -145,12 +141,11 @@
     background: var(--brand-primary);
     color: #fff;
   }
-  button.primary:active { background: var(--brand-primary-dark); }
-  button.secondary {
-    background: #fff;
-    color: var(--danger);
-    border: 2px solid #f0d2cf;
+  button.primary:disabled {
+    background: #b9c4da;
+    cursor: not-allowed;
   }
+  button.primary:active:not(:disabled) { background: var(--brand-primary-dark); }
   button.link-back {
     display: inline-flex;
     align-items: center;
@@ -165,9 +160,7 @@
     cursor: pointer;
     margin-top: 6px;
   }
-  button.link-back:active {
-    background: #eaf0fb;
-  }
+  button.link-back:active { background: #eaf0fb; }
   .result-card {
     background: var(--card-bg);
     border: 2px solid var(--brand-primary);
@@ -181,9 +174,7 @@
     margin-bottom: 4px;
   }
   .result-card .drug-line strong { color: var(--text); }
-  .result-block {
-    margin: 18px 0;
-  }
+  .result-block { margin: 18px 0; }
   .result-block .big-number {
     font-size: 2.6rem;
     font-weight: 800;
@@ -200,11 +191,6 @@
     letter-spacing: 0.05em;
     color: var(--muted);
     margin-top: 2px;
-  }
-  .divider {
-    height: 1px;
-    background: #e4e9e7;
-    margin: 16px 0;
   }
   .additives {
     text-align: left;
@@ -234,10 +220,8 @@
     color: var(--muted);
     margin-bottom: 4px;
   }
-  .suggested-directions .sd-text {
-    font-weight: 700;
-  }
-  .mismatch-warning {
+  .suggested-directions .sd-text { font-weight: 700; }
+  .max-dose-warning {
     background: #fdecea;
     border: 2px solid var(--danger);
     color: var(--danger);
@@ -252,15 +236,14 @@
     text-align: center;
     font-size: 0.72rem;
     color: var(--muted);
-    padding: 10px 16px 24px;
+    padding: 14px 20px 30px;
   }
 </style>
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GLP-1 Calc">
 <meta name="theme-color" content="#1d46a1">
-
 </head>
 <body>
 
@@ -271,64 +254,90 @@
 
 <main>
   <div class="progress">
-    <div class="dot" data-step="1"></div>
-    <div class="dot" data-step="2"></div>
-    <div class="dot" data-step="3"></div>
+    <div class="dot active" data-dot="1"></div>
+    <div class="dot" data-dot="2"></div>
+    <div class="dot" data-dot="3"></div>
+    <div class="dot" data-dot="4"></div>
+    <div class="dot" data-dot="5"></div>
   </div>
 
   <!-- STEP 1: DRUG -->
-  <section class="step" id="step-1">
-    <div class="step-label">Step 1 of 3 — Select drug</div>
-    <div class="option-grid" id="drug-options"></div>
-  </section>
-
-  <!-- STEP 2: DOSE -->
-  <section class="step" id="step-2">
-    <div class="step-label">Step 2 of 3 — Select weekly dose</div>
-    <div class="option-grid" id="dose-options"></div>
-    <button class="link-back" id="back-to-1">&larr; Change drug</button>
-  </section>
-
-  <!-- STEP 3: CONFIRM CONCENTRATION -->
-  <section class="step" id="step-3">
-    <div class="step-label">Step 3 of 3 — Confirm concentration on vial</div>
-    <div class="confirm-card">
-      <div class="expected-label">Vial should read</div>
-      <div class="expected-conc" id="expected-conc-value">—</div>
-      <p class="instruction">Check the concentration printed on the vial label. Tap Confirm only if it matches.</p>
-      <div class="btn-row">
-        <button class="secondary" id="doesnt-match">Doesn't match</button>
-        <button class="primary" id="confirm-match">Confirm — matches</button>
-      </div>
+  <div class="step visible" id="step-1">
+    <div class="step-label">Step 1 of 5 — Select drug</div>
+    <div class="option-grid">
+      <button class="option" onclick="pickDrug('semaglutide')">Semaglutide</button>
+      <button class="option" onclick="pickDrug('tirzepatide')">Tirzepatide</button>
     </div>
-    <button class="link-back" id="back-to-2">&larr; Change dose</button>
-  </section>
+  </div>
 
-  <!-- RESULT -->
-  <section class="step" id="step-result">
-    <div id="mismatch-banner" class="mismatch-warning" style="display:none;">
-      Stop — the vial's concentration does not match <strong id="mismatch-context"></strong>.
-      Do not draw or administer. Take this vial to the pharmacist before proceeding.
+  <!-- STEP 2: DOSE PER INJECTION (no vial step — custom entry allowed) -->
+  <div class="step" id="step-2">
+    <div class="step-label">Step 2 of 5 — Dose per injection</div>
+    <div class="option-grid single-col" id="dose-preset-grid"></div>
+    <div class="custom-dose-box" id="custom-dose-box">
+      <label for="custom-dose-input">Or enter a custom dose per injection (mg)</label>
+      <input type="number" id="custom-dose-input" step="0.01" min="0" placeholder="e.g. 1.75" oninput="onCustomDoseInput()">
+      <div id="inline-max-dose-warning" class="max-dose-warning" style="display:none; margin-top:10px; margin-bottom:0;"></div>
     </div>
+    <div class="btn-row">
+      <button class="link-back" onclick="goStep(1)">← Back</button>
+      <button class="primary" id="dose-next-btn" disabled onclick="goStep(3)">Next</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: FREQUENCY (new, separate step) -->
+  <div class="step" id="step-3">
+    <div class="step-label">Step 3 of 5 — Frequency</div>
+    <div class="option-grid" id="frequency-grid">
+      <button class="option" onclick="selectFrequency('once weekly', this)">Once weekly</button>
+      <button class="option" onclick="selectFrequency('twice weekly', this)">Twice weekly</button>
+      <button class="option" onclick="selectFrequency('every 5 days', this)">Every 5 days</button>
+    </div>
+    <div class="custom-dose-box" id="custom-freq-box">
+      <label for="custom-freq-input">Or enter a custom frequency</label>
+      <input type="text" id="custom-freq-input" placeholder="e.g. every 10 days" oninput="onCustomFreqInput()">
+    </div>
+    <div class="btn-row">
+      <button class="link-back" onclick="goStep(2)">← Back</button>
+      <button class="primary" id="freq-next-btn" disabled onclick="goStep(4)">Next</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: CONCENTRATION -->
+  <div class="step" id="step-4">
+    <div class="step-label">Step 4 of 5 — Select concentration</div>
+    <p style="font-size:0.85rem; color:var(--muted); margin-top:-4px;">Choose the concentration Gibson's is compounding for this order.</p>
+    <div class="option-grid single-col" id="conc-grid"></div>
+    <p id="conc-filter-note" style="display:none; font-size:0.78rem; color:var(--muted); margin-top:10px;"></p>
+    <div class="btn-row">
+      <button class="link-back" onclick="goStep(3)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: RESULT -->
+  <div class="step" id="step-5">
+    <div class="step-label">Step 5 of 5 — Result</div>
+    <div id="max-dose-warning" class="max-dose-warning" style="display:none;"></div>
     <div class="result-card" id="result-card">
-      <div class="drug-line"><strong id="res-drug"></strong> — <span id="res-dose"></span> weekly</div>
+      <div class="drug-line"><strong id="res-drug"></strong> — <span id="res-dose"></span> mg per dose, <span id="res-freq"></span>, <span id="res-conc"></span> mg/mL</div>
       <div class="result-block">
-        <div class="big-number" id="res-units">— <small>U-100 units</small></div>
+        <div class="big-number" id="res-units">— <small>units</small></div>
         <div class="result-label">U-100 syringe units to draw</div>
       </div>
-      <div class="divider"></div>
-      <div class="result-block">
-        <div class="big-number" id="res-doses-per-vial">—</div>
-        <div class="result-label">Doses per vial</div>
+      <div class="result-block" style="margin-top:0;">
+        <div class="big-number" id="res-doses-per-vial" style="font-size:1.8rem;">—</div>
+        <div class="result-label">doses per vial (200 unit vial)</div>
       </div>
       <div class="additives" id="res-additives"></div>
-      <div class="suggested-directions" id="res-suggested-directions">
+      <div class="suggested-directions">
         <div class="sd-label">Suggested directions</div>
         <div class="sd-text" id="sd-text"></div>
       </div>
     </div>
-    <button class="link-back" id="start-over">&larr; Start over</button>
-  </section>
+    <div class="btn-row">
+      <button class="link-back" onclick="goStep(1); resetAll();">Start over</button>
+    </div>
+  </div>
 </main>
 
 <footer>
@@ -336,160 +345,204 @@
 </footer>
 
 <script>
-(function () {
-  // ---- Data: transcribed exactly from GLP-1 Order Form ----
-  var DATA = {
-    "Semaglutide": {
-      additives: "Methylcobalamin (100 mcg/mL), L-Carnitine (100 mg/mL)",
-      tiers: [
-        { dose: 0.22, conc: 0.44, vialMl: 2, injMl: 0.50 },
-        { dose: 0.44, conc: 0.88, vialMl: 2, injMl: 0.50 },
-        { dose: 0.88, conc: 1.76, vialMl: 2, injMl: 0.50 },
-        { dose: 1.5,  conc: 3.00, vialMl: 2, injMl: 0.50 },
-        { dose: 2.21, conc: 4.42, vialMl: 2, injMl: 0.50 },
-        { dose: 2.67, conc: 5.34, vialMl: 2, injMl: 0.50 }
-      ]
-    },
-    "Tirzepatide": {
-      additives: "Methylcobalamin (100 mcg/mL), L-Carnitine (100 mg/mL), Glycine (5 mg/mL)",
-      tiers: [
-        { dose: 2.2,   conc: 4.4,   vialMl: 2, injMl: 0.50 },
-        { dose: 4.4,   conc: 8.8,   vialMl: 2, injMl: 0.50 },
-        { dose: 6.6,   conc: 13.2,  vialMl: 2, injMl: 0.50 },
-        { dose: 8.8,   conc: 17.6,  vialMl: 2, injMl: 0.50 },
-        { dose: 11.24, conc: 22.48, vialMl: 2, injMl: 0.50 },
-        { dose: 13.2,  conc: 26.4,  vialMl: 2, injMl: 0.50 },
-        { dose: 16.6,  conc: 33.2,  vialMl: 2, injMl: 0.50 }
-      ]
-    }
+  // Available concentrations Gibson's compounds per drug (from the 13-tier order form),
+  // now offered as an independent selection rather than tied 1:1 to a single preset dose.
+  const CONCENTRATIONS = {
+    semaglutide: [0.44, 0.88, 1.76, 3.00, 4.42, 5.34],
+    tirzepatide: [4.4, 8.8, 13.2, 17.6, 22.48, 26.4, 33.2]
   };
-  // U-100 syringe convention: 1 mL = 100 units
-  var UNITS_PER_ML = 100;
+  // Preset "common" doses shown as quick-pick buttons, still allow typing any custom value
+  const PRESET_DOSES = {
+    semaglutide: [0.22, 0.44, 0.88, 1.5, 2.21, 2.67],
+    tirzepatide: [2.2, 4.4, 6.6, 8.8, 11.24, 13.2, 16.6]
+  };
+  const MAX_DOSE = { semaglutide: 3.5, tirzepatide: 20 };
+  const DRUG_LABEL = { semaglutide: 'Semaglutide', tirzepatide: 'Tirzepatide' };
+  // Fixed additives included with every order for each drug (DEC-40 — not selectable, always included)
+  const ADDITIVES = {
+    semaglutide: 'Methylcobalamin (100 mcg/mL), L-Carnitine (100 mg/mL)',
+    tirzepatide: 'Methylcobalamin (100 mcg/mL), L-Carnitine (100 mg/mL), Glycine (5 mg/mL)'
+  };
 
-  var state = { drug: null, tier: null };
+  const VIAL_UNITS = 200; // every vial is 2 mL = 200 U-100 units, fixed regardless of dose/concentration (DEC-35)
 
-  var steps = ["step-1", "step-2", "step-3", "step-result"];
-  function showStep(id) {
-    steps.forEach(function (s) {
-      document.getElementById(s).classList.toggle("visible", s === id);
+  let state = { drug: null, dose: null, conc: null, frequency: null };
+
+  function resetAll() {
+    state = { drug: null, dose: null, conc: null, frequency: null };
+    document.querySelectorAll('#frequency-grid .option').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-freq-box').classList.remove('selected');
+    document.getElementById('custom-freq-input').value = '';
+  }
+
+  function goStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('visible'));
+    document.getElementById('step-' + n).classList.add('visible');
+    document.querySelectorAll('.progress .dot').forEach((d, i) => {
+      d.classList.toggle('active', i < n);
     });
-    var stepNum = { "step-1": 1, "step-2": 2, "step-3": 3, "step-result": 3 }[id];
-    document.querySelectorAll(".progress .dot").forEach(function (dot) {
-      dot.classList.toggle("active", parseInt(dot.dataset.step, 10) <= stepNum);
-    });
-    window.scrollTo(0, 0);
   }
 
-  function fmtMg(n) {
-    return (Math.round(n * 100) / 100) + " mg";
-  }
-  function fmtConc(n) {
-    return n.toFixed(2) + " mg/mL";
-  }
-
-  function buildDrugOptions() {
-    var grid = document.getElementById("drug-options");
-    grid.innerHTML = "";
-    Object.keys(DATA).forEach(function (drug) {
-      var btn = document.createElement("button");
-      btn.className = "option";
-      btn.textContent = drug;
-      btn.addEventListener("click", function () {
-        state.drug = drug;
-        buildDoseOptions();
-        showStep("step-2");
-      });
+  function pickDrug(drug) {
+    state.drug = drug;
+    state.dose = null;
+    state.frequency = null;
+    const input = document.getElementById('custom-dose-input');
+    input.value = '';
+    input.placeholder = 'e.g. 1.75 — max ' + MAX_DOSE[drug] + ' mg per injection';
+    document.getElementById('inline-max-dose-warning').style.display = 'none';
+    document.querySelectorAll('#frequency-grid .option').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-freq-box').classList.remove('selected');
+    document.getElementById('custom-freq-input').value = '';
+    document.getElementById('dose-next-btn').disabled = true;
+    document.getElementById('freq-next-btn').disabled = true;
+    const grid = document.getElementById('dose-preset-grid');
+    grid.innerHTML = '';
+    PRESET_DOSES[drug].forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = d + ' mg';
+      btn.onclick = () => selectPresetDose(d, btn);
       grid.appendChild(btn);
     });
+    goStep(2);
   }
 
-  function buildDoseOptions() {
-    var grid = document.getElementById("dose-options");
-    grid.innerHTML = "";
-    grid.classList.add("single-col");
-    DATA[state.drug].tiers.forEach(function (tier) {
-      var btn = document.createElement("button");
-      btn.className = "option";
-      btn.innerHTML = fmtMg(tier.dose) + '<span class="sub">weekly dose</span>';
-      btn.addEventListener("click", function () {
-        state.tier = tier;
-        document.getElementById("expected-conc-value").textContent = fmtConc(tier.conc);
-        showStep("step-3");
-      });
+  function updateNextButton() {
+    const nextBtn = document.getElementById('dose-next-btn');
+    const doseOk = state.dose !== null && state.dose > 0 && state.dose <= MAX_DOSE[state.drug];
+    nextBtn.disabled = !doseOk;
+  }
+
+  function updateFreqNextButton() {
+    const nextBtn = document.getElementById('freq-next-btn');
+    nextBtn.disabled = !state.frequency;
+  }
+
+  function selectPresetDose(dose, btnEl) {
+    document.querySelectorAll('#dose-preset-grid .option').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-dose-box').classList.remove('selected');
+    document.getElementById('custom-dose-input').value = '';
+    document.getElementById('inline-max-dose-warning').style.display = 'none';
+    btnEl.classList.add('selected');
+    state.dose = dose;
+    updateNextButton();
+  }
+
+  function onCustomDoseInput() {
+    const val = parseFloat(document.getElementById('custom-dose-input').value);
+    document.querySelectorAll('#dose-preset-grid .option').forEach(b => b.classList.remove('selected'));
+    const box = document.getElementById('custom-dose-box');
+    const inlineWarn = document.getElementById('inline-max-dose-warning');
+
+    if (!isNaN(val) && val > 0) {
+      box.classList.add('selected');
+      state.dose = val;
+      if (val > MAX_DOSE[state.drug]) {
+        inlineWarn.style.display = 'block';
+        inlineWarn.textContent = 'This exceeds Gibson\'s maximum dose per injection for ' +
+          DRUG_LABEL[state.drug] + ' (' + MAX_DOSE[state.drug] + ' mg). Contact Gibson\'s Pharmacy — a dose above this limit cannot be calculated here.';
+      } else {
+        inlineWarn.style.display = 'none';
+      }
+    } else {
+      box.classList.remove('selected');
+      state.dose = null;
+      inlineWarn.style.display = 'none';
+    }
+    updateNextButton();
+  }
+
+  function selectFrequency(freq, btnEl) {
+    document.querySelectorAll('#frequency-grid .option').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-freq-box').classList.remove('selected');
+    document.getElementById('custom-freq-input').value = '';
+    btnEl.classList.add('selected');
+    state.frequency = freq;
+    updateFreqNextButton();
+  }
+
+  function onCustomFreqInput() {
+    const val = document.getElementById('custom-freq-input').value.trim();
+    document.querySelectorAll('#frequency-grid .option').forEach(b => b.classList.remove('selected'));
+    const box = document.getElementById('custom-freq-box');
+    if (val) {
+      box.classList.add('selected');
+      state.frequency = val;
+    } else {
+      box.classList.remove('selected');
+      state.frequency = null;
+    }
+    updateFreqNextButton();
+  }
+
+  function buildConcStep() {
+    const grid = document.getElementById('conc-grid');
+    const note = document.getElementById('conc-filter-note');
+    grid.innerHTML = '';
+    const allOptions = CONCENTRATIONS[state.drug];
+    const available = allOptions.filter(c => Math.round((state.dose / c) * 100) <= 100);
+    const hiddenCount = allOptions.length - available.length;
+
+    available.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = c + ' mg/mL';
+      btn.onclick = () => selectConc(c, btn);
       grid.appendChild(btn);
     });
+
+    if (hiddenCount > 0) {
+      note.style.display = 'block';
+      note.textContent = hiddenCount + ' lower concentration' + (hiddenCount > 1 ? 's are' : ' is') +
+        ' hidden because ' + (hiddenCount > 1 ? 'they would' : 'it would') +
+        ' require over 100 units (more than one U-100 syringe) for this dose.';
+    } else {
+      note.style.display = 'none';
+    }
   }
 
-  function showResult(matched) {
-    var tier = state.tier;
+  function selectConc(conc, btnEl) {
+    document.querySelectorAll('#conc-grid .option').forEach(b => b.classList.remove('selected'));
+    btnEl.classList.add('selected');
+    state.conc = conc;
+    showResult();
+  }
 
-    if (!matched) {
-      // Safety: a mismatch must not expose units/doses-per-vial or any other
-      // calculated number. Only the drug + dose being checked (the user's own
-      // selections, not a calculated result) are echoed for pharmacist context.
-      document.getElementById("mismatch-context").textContent =
-        state.drug + " " + fmtMg(tier.dose) + " weekly";
-      document.getElementById("mismatch-banner").style.display = "block";
-      document.getElementById("result-card").style.display = "none";
-      showStep("step-result");
+  function showResult() {
+    const warnEl = document.getElementById('max-dose-warning');
+    const cardEl = document.getElementById('result-card');
+
+    if (state.dose > MAX_DOSE[state.drug]) {
+      warnEl.style.display = 'block';
+      warnEl.textContent = 'This dose (' + state.dose + ' mg per injection) exceeds Gibson\'s maximum dose per injection for ' +
+        DRUG_LABEL[state.drug] + ' (' + MAX_DOSE[state.drug] + ' mg). Contact Gibson\'s Pharmacy before proceeding — no dose is calculated above this limit.';
+      cardEl.style.display = 'none';
+      goStep(5);
       return;
     }
+    warnEl.style.display = 'none';
+    cardEl.style.display = '';
 
-    var units = Math.round(tier.injMl * UNITS_PER_ML);
-    var dosesPerVial = Math.floor((tier.vialMl / tier.injMl) + 1e-9);
-
-    document.getElementById("res-drug").textContent = state.drug;
-    document.getElementById("res-dose").textContent = fmtMg(tier.dose);
-    document.getElementById("res-units").innerHTML = units + " <small>U-100 units (" + tier.injMl.toFixed(2) + " mL)</small>";
-    document.getElementById("res-doses-per-vial").textContent = dosesPerVial;
-    document.getElementById("res-additives").innerHTML =
-      "<strong>Concentration:</strong> " + fmtConc(tier.conc) + " &middot; " +
-      "<strong>Vial size:</strong> " + tier.vialMl + " mL<br>" +
-      "<strong>Additives:</strong> " + DATA[state.drug].additives;
-    // Suggested directions: route + frequency are consistent across every tier on
-    // the order form ("weekly dose," subcutaneous injection). Duration is deliberately
-    // NOT included — the order form has no duration/titration-schedule field for any
-    // tier, so a duration would be invented, not sourced. See DEC-9.
-    document.getElementById("sd-text").textContent =
-      "Inject " + units + " U-100 syringe units subcutaneously once weekly.";
-
-    document.getElementById("mismatch-banner").style.display = "none";
-    document.getElementById("result-card").style.display = "block";
-    showStep("step-result");
+    const units = Math.round((state.dose / state.conc) * 100);
+    const dosesPerVial = Math.floor(VIAL_UNITS / units);
+    document.getElementById('res-drug').textContent = DRUG_LABEL[state.drug];
+    document.getElementById('res-dose').textContent = state.dose;
+    document.getElementById('res-conc').textContent = state.conc;
+    document.getElementById('res-freq').textContent = state.frequency;
+    document.getElementById('res-units').innerHTML = units + ' <small>units</small>';
+    document.getElementById('res-doses-per-vial').textContent = dosesPerVial;
+    document.getElementById('res-additives').innerHTML = '<strong>Additives:</strong> ' + ADDITIVES[state.drug];
+    document.getElementById('sd-text').textContent = 'Inject ' + units + ' units subcutaneously ' + state.frequency + '.';
+    goStep(5);
   }
 
-  document.getElementById("back-to-1").addEventListener("click", function () {
-    showStep("step-1");
-  });
-  document.getElementById("back-to-2").addEventListener("click", function () {
-    showStep("step-2");
-  });
-  document.getElementById("confirm-match").addEventListener("click", function () {
-    showResult(true);
-  });
-  document.getElementById("doesnt-match").addEventListener("click", function () {
-    showResult(false);
-  });
-  document.getElementById("start-over").addEventListener("click", function () {
-    state = { drug: null, tier: null };
-    showStep("step-1");
-  });
-
-  // Trap the phone/browser back button so it resets to Step 1 instead of
-  // closing the page unexpectedly. Deliberately simple: always returns to
-  // Step 1 rather than reconstructing the exact prior step, so behavior is
-  // predictable and easy to test rather than clever.
-  history.replaceState({ trap: true }, "");
-  history.pushState({ trap: true }, "");
-  window.addEventListener("popstate", function () {
-    state = { drug: null, tier: null };
-    showStep("step-1");
-    history.pushState({ trap: true }, "");
-  });
-
-  buildDrugOptions();
-  showStep("step-1");
-})();
+  // Rebuild concentration step whenever step 4 becomes visible for the chosen drug
+  const origGoStep = goStep;
+  goStep = function(n) {
+    origGoStep(n);
+    if (n === 4) buildConcStep();
+  };
 </script>
 
 </body>
